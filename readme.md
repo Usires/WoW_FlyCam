@@ -1,4 +1,4 @@
-# FlyCam – World of Warcraft Addon
+# :uk: FlyCam – World of Warcraft Addon
 
 FlyCam automatically adjusts the camera distance when you mount or dismount flying mounts in World of Warcraft (Retail).
 
@@ -19,10 +19,9 @@ FlyCam automatically adjusts the camera distance when you mount or dismount flyi
 
 Copy the `FlyCam` folder into your `World of Warcraft/_retail_/Interface/AddOns/` directory and enable the addon in the character selection AddOns menu.
 
+---
 
----- DEUTSCH ----
-
-# FlyCam – World of Warcraft Addon
+# :de: FlyCam – World of Warcraft Addon
 
 FlyCam passt die Kameradistanz automatisch an, wenn du in World of Warcraft (Retail) auf einen Flugreittier auf- oder absteigst.
 
