@@ -12,6 +12,10 @@ local defaults = {
     flySteps = 40,      -- how many steps to zoom out when flying
     groundSteps = 27,   -- how many steps to zoom in when dismounting
     duration = 1.0,     -- seconds for smooth transition
+    raceSteps = 20,      -- how many steps to zoom in when starting a dragonrace
+    raceDuration = 0.5,  -- seconds for smooth transition (dragonrace)
+    raceFirstPerson = false, -- enable first-person mode during races
+    raceRestoreViewIndex = 5, -- which camera view index (2–5) to use for restore
 }
 
 local function CopyDefaults(src, dest)
@@ -67,7 +71,8 @@ local FLYING_TYPES = {
     [248] = true,
     [247] = true,
     [306] = true,
-}
+    [402] = true,
+    }
 
 local function GetActiveMountID()
     local mountIDs = C_MountJournal.GetMountIDs()
@@ -121,25 +126,126 @@ local function IsOnFlyingMount()
 end
 
 -----------------------------------------------------------------------
+-- Advanced flying / Dragonriding area helper
+-----------------------------------------------------------------------
+
+local function IsInAdvancedFlyingArea()
+    if IsAdvancedFlyableArea and IsAdvancedFlyableArea() then
+        return true
+    end
+    return false
+end
+
+-----------------------------------------------------------------------
+-- Dragonriding race detection
+-----------------------------------------------------------------------
+
+local RACE_AURAS = {
+    [439239] = true, -- "Rennstart" / "Starting race"
+    [369968] = true, -- "Im Rennen" / "In the race"
+}
+
+local function IsInDragonRidingRace()
+    if not AuraUtil or not AuraUtil.ForEachAura then
+        return false
+    end
+
+    -- If these helpers exist, use them to avoid secret/blocked fields
+    local canaccessvalue = canaccessvalue
+    local issecretvalue = issecretvalue
+
+    local inRace = false
+
+    local function CheckAura(auraData)
+        -- Safety: skip anything we are not allowed to inspect
+        if canaccessvalue and not canaccessvalue(auraData) then
+            return -- do nothing, continue iterating
+        end
+
+        local spellId
+        if issecretvalue and issecretvalue(auraData.spellId) then
+            -- This aura’s spellId is private/secret → we must not touch it
+            return
+        else
+            spellId = auraData.spellId
+        end
+
+        if spellId and RACE_AURAS[spellId] then
+            inRace = true
+            return true -- stop iterating
+        end
+    end
+
+    AuraUtil.ForEachAura("player", "HELPFUL", nil, CheckAura, true)
+
+    return inRace
+end
+
+
+-----------------------------------------------------------------------
+-- Dragonriding race first-person + restore via raceSteps
+-----------------------------------------------------------------------
+
+local wasInRaceFP = false
+
+local function UpdateRaceFirstPersonSimple()
+    local db = FlyCamDB or defaults
+    if not db.raceFirstPerson then
+        wasInRaceFP = false
+        return
+    end
+
+    local inRace = IsInDragonRidingRace()
+
+    -- Race just started
+    if inRace and not wasInRaceFP then
+        -- Go to first-person: view 1
+        SetView(1)
+    end
+
+    -- Race just ended
+    if not inRace and wasInRaceFP then
+        -- Restore using raceSteps/raceDuration
+        local raceSteps = db.raceSteps or defaults.raceSteps
+        local raceDuration = db.raceDuration or defaults.raceDuration
+
+        -- Make sure max zoom is high enough, just like in ApplyCameraForState
+        SetCVar("cameraDistanceMaxZoomFactor", 2.6)
+        SmoothZoom(raceSteps, raceDuration)
+    end
+
+    wasInRaceFP = inRace
+end
+
+
+-----------------------------------------------------------------------
 -- Camera application logic
 -----------------------------------------------------------------------
 
 local function ApplyCameraForState()
     local db = FlyCamDB or defaults
 
-    local flySteps = db.flySteps or defaults.flySteps
-    local groundSteps = db.groundSteps or defaults.groundSteps
-    local duration = db.duration or defaults.duration
+    local flySteps       = db.flySteps       or defaults.flySteps
+    local groundSteps    = db.groundSteps    or defaults.groundSteps
+    local duration       = db.duration       or defaults.duration
+    local raceSteps      = db.raceSteps      or defaults.raceSteps
+    local raceDuration   = db.raceDuration   or defaults.raceDuration
 
-    -- Ensure max zoom factor is wide enough
     SetCVar("cameraDistanceMaxZoomFactor", 2.6)
+
+    if IsInDragonRidingRace() then
+        SmoothZoom(raceSteps, raceDuration)
+        return
+    end
 
     if IsOnFlyingMount() then
         SmoothZoom(flySteps, duration)
     else
-        SmoothZoom(-groundSteps, duration) -- negative = zoom in
+        SmoothZoom(-groundSteps, duration)
     end
 end
+
+
 
 -----------------------------------------------------------------------
 -- Options panel
@@ -149,7 +255,7 @@ local function CreateOptionsPanel()
     local panel = CreateFrame("Frame", "FlyCamOptionsPanel", UIParent)
     panel.name = "FlyCam"
 
-    panel:Hide()  -- let Settings UI show it
+    panel:Hide()
 
     --------------------------------------------------------------------
     -- Title and subtitle
@@ -163,37 +269,49 @@ local function CreateOptionsPanel()
     local subtitle = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
     subtitle:SetJustifyH("LEFT")
-    subtitle:SetText("Camera zoom settings for flying and ground mounts.")
+    subtitle:SetText("Camera zoom settings for flying, ground mounts, and races.")
 
     --------------------------------------------------------------------
-    -- Readme / usage text (multiline, wrapped)
+    -- Readme / usage text
     --------------------------------------------------------------------
     local helpText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     helpText:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 0, -12)
     helpText:SetJustifyH("LEFT")
-    helpText:SetWidth(500)          -- controls wrapping width
+    helpText:SetWidth(500)
     helpText:SetText(
         "Zoom logic:\n" ..
         "- Flying zoom steps: how many notches the camera zooms out when you mount a flying mount.\n" ..
         "- Ground zoom steps: how many notches the camera zooms in when you dismount.\n" ..
-        "- Transition duration: how long the smooth zoom animation takes.\n\n" ..
-        "Debugging:\n" ..
-        "- Use /flycamdebug while mounted to see your active mount, its mountTypeID, and whether FlyCam treats it as flying.\n" ..
-        "- If you find a flying mount that is not recognized, copy the suggested mountTypeID line into the FLYING_TYPES table in FlyCam.lua."
+        "- Race zoom steps: camera distance used after a dragonriding race.\n" ..
+        "- Transition zoom duration: how long the smooth zoom animation takes.\n\n" ..
+        "Debug:\n" ..
+        "- Use /flycamdebug while mounted to see your active mount and mountTypeID.\n" ..
+        "- Use /flycamrace in dragonriding zones to inspect race-related buffs."
     )
 
     --------------------------------------------------------------------
-    -- Flying steps slider + value label
+    -- First-person in race checkbox
+    --------------------------------------------------------------------
+    local raceFPCheckbox = CreateFrame("CheckButton", "FlyCamRaceFPCheckbox", panel, "InterfaceOptionsCheckButtonTemplate")
+    raceFPCheckbox:SetPoint("TOPLEFT", helpText, "BOTTOMLEFT", 0, -20)
+    raceFPCheckbox.Text:SetText("Use first-person view during dragonriding races")
+
+    raceFPCheckbox:SetScript("OnClick", function(self)
+        FlyCamDB.raceFirstPerson = self:GetChecked() and true or false
+    end)
+
+    --------------------------------------------------------------------
+    -- Flying steps slider + value
     --------------------------------------------------------------------
     local flySlider = CreateFrame("Slider", "FlyCamFlyStepsSlider", panel, "OptionsSliderTemplate")
     flySlider:SetWidth(250)
     flySlider:SetHeight(16)
-    flySlider:SetPoint("TOPLEFT", helpText, "BOTTOMLEFT", 0, -30)
+    flySlider:SetPoint("TOPLEFT", raceFPCheckbox, "BOTTOMLEFT", 0, -30)
     flySlider:SetMinMaxValues(5, 40)
     flySlider:SetValueStep(1)
     flySlider:SetObeyStepOnDrag(true)
     flySlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
-    flySlider:SetValue(defaults.flySteps or 20)  -- initial thumb position
+    flySlider:SetValue(defaults.flySteps or 20)
 
     _G[flySlider:GetName() .. "Low"]:SetText("5")
     _G[flySlider:GetName() .. "High"]:SetText("40")
@@ -212,7 +330,7 @@ local function CreateOptionsPanel()
     end)
 
     --------------------------------------------------------------------
-    -- Ground steps slider + value label
+    -- Ground steps slider + value
     --------------------------------------------------------------------
     local groundSlider = CreateFrame("Slider", "FlyCamGroundStepsSlider", panel, "OptionsSliderTemplate")
     groundSlider:SetWidth(250)
@@ -241,7 +359,7 @@ local function CreateOptionsPanel()
     end)
 
     --------------------------------------------------------------------
-    -- Duration slider + value label
+    -- General duration slider + value
     --------------------------------------------------------------------
     local durationSlider = CreateFrame("Slider", "FlyCamDurationSlider", panel, "OptionsSliderTemplate")
     durationSlider:SetWidth(250)
@@ -255,7 +373,7 @@ local function CreateOptionsPanel()
 
     _G[durationSlider:GetName() .. "Low"]:SetText("0.1s")
     _G[durationSlider:GetName() .. "High"]:SetText("2.0s")
-    _G[durationSlider:GetName() .. "Text"]:SetText("Transition duration")
+    _G[durationSlider:GetName() .. "Text"]:SetText("Transition zoom duration")
     _G[durationSlider:GetName() .. "Text"]:SetJustifyH("LEFT")
 
     local durationValueText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -270,18 +388,78 @@ local function CreateOptionsPanel()
     end)
 
     --------------------------------------------------------------------
+    -- Race steps slider + value
+    --------------------------------------------------------------------
+    local raceSlider = CreateFrame("Slider", "FlyCamRaceStepsSlider", panel, "OptionsSliderTemplate")
+    raceSlider:SetWidth(250)
+    raceSlider:SetHeight(16)
+    raceSlider:SetPoint("TOPLEFT", durationSlider, "BOTTOMLEFT", 0, -40)
+    raceSlider:SetMinMaxValues(5, 40)
+    raceSlider:SetValueStep(1)
+    raceSlider:SetObeyStepOnDrag(true)
+    raceSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    raceSlider:SetValue(defaults.raceSteps or 12)
+
+    _G[raceSlider:GetName() .. "Low"]:SetText("5")
+    _G[raceSlider:GetName() .. "High"]:SetText("40")
+    _G[raceSlider:GetName() .. "Text"]:SetText("Race zoom steps")
+    _G[raceSlider:GetName() .. "Text"]:SetJustifyH("LEFT")
+
+    local raceValueText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    raceValueText:SetPoint("LEFT", raceSlider, "RIGHT", 10, 0)
+    raceValueText:SetJustifyH("LEFT")
+    raceValueText:SetText("")
+
+    raceSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value + 0.5)
+        FlyCamDB.raceSteps = value
+        raceValueText:SetText(value)
+    end)
+
+    --------------------------------------------------------------------
+    -- Race duration slider + value
+    --------------------------------------------------------------------
+    local raceDurationSlider = CreateFrame("Slider", "FlyCamRaceDurationSlider", panel, "OptionsSliderTemplate")
+    raceDurationSlider:SetWidth(250)
+    raceDurationSlider:SetHeight(16)
+    raceDurationSlider:SetPoint("TOPLEFT", raceSlider, "BOTTOMLEFT", 0, -40)
+    raceDurationSlider:SetMinMaxValues(0.1, 2.0)
+    raceDurationSlider:SetValueStep(0.1)
+    raceDurationSlider:SetObeyStepOnDrag(true)
+    raceDurationSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    raceDurationSlider:SetValue(defaults.raceDuration or 0.5)
+
+    _G[raceDurationSlider:GetName() .. "Low"]:SetText("0.1s")
+    _G[raceDurationSlider:GetName() .. "High"]:SetText("2.0s")
+    _G[raceDurationSlider:GetName() .. "Text"]:SetText("Transition zoom duration after a race")
+    _G[raceDurationSlider:GetName() .. "Text"]:SetJustifyH("LEFT")
+
+    local raceDurationValueText = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    raceDurationValueText:SetPoint("LEFT", raceDurationSlider, "RIGHT", 10, 0)
+    raceDurationValueText:SetJustifyH("LEFT")
+    raceDurationValueText:SetText("")
+
+    raceDurationSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.floor(value * 10 + 0.5) / 10
+        FlyCamDB.raceDuration = value
+        raceDurationValueText:SetText(string.format("%.1fs", value))
+    end)
+
+    --------------------------------------------------------------------
     -- Footer
     --------------------------------------------------------------------
     local footer = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 20, 20)
     footer:SetJustifyH("LEFT")
-    footer:SetText("FlyCam © 2026 TheDirk. Made with love and a little local AI helper called Gemma3. <3")
+    footer:SetText("FlyCam v0.2 -- © 2026 github.com/Usires. Made with love and Claude. <3")
 
     --------------------------------------------------------------------
     -- Refresh + registration
     --------------------------------------------------------------------
     panel.refresh = function()
         local db = FlyCamDB or defaults
+
+        raceFPCheckbox:SetChecked(db.raceFirstPerson or defaults.raceFirstPerson)
 
         local fly = db.flySteps or defaults.flySteps
         flySlider:SetValue(fly)
@@ -294,6 +472,14 @@ local function CreateOptionsPanel()
         local dur = db.duration or defaults.duration
         durationSlider:SetValue(dur)
         durationValueText:SetText(string.format("%.1fs", dur))
+
+        local race = db.raceSteps or defaults.raceSteps
+        raceSlider:SetValue(race)
+        raceValueText:SetText(race)
+
+        local raceDur = db.raceDuration or defaults.raceDuration
+        raceDurationSlider:SetValue(raceDur)
+        raceDurationValueText:SetText(string.format("%.1fs", raceDur))
     end
 
     local category, layout = Settings.RegisterCanvasLayoutCategory(panel, "FlyCam")
@@ -305,7 +491,10 @@ end
 
 
 
--- Debug slash: shows active mount info and type
+-----------------------------------------------------------------------
+-- Mount debug slash: shows active mount info and type
+-----------------------------------------------------------------------
+
 SLASH_FLYCAMDEBUG1 = "/flycamdebug"
 SlashCmdList["FLYCAMDEBUG"] = function(msg)
     if not IsMounted() then
@@ -341,13 +530,27 @@ end
 
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+f:RegisterEvent("UNIT_AURA")
 
 f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
+        -- Initialize saved variables
         FlyCamDB = CopyDefaults(defaults, FlyCamDB or {})
+
+        -- Create options panel
         CreateOptionsPanel()
-        print("FlyCam loaded. Configure under Interface → AddOns → FlyCam.")
+
+        print("FlyCam loaded. Configure under Options → AddOns → FlyCam.")
+
     elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
+        -- Mount or dismount, adjust camera
         ApplyCameraForState()
+
+    elseif event == "UNIT_AURA" then
+        local unit = arg1
+        if unit == "player" then
+            -- Handle race start/end → first person + restore raceSteps
+            UpdateRaceFirstPersonSimple()
+        end
     end
 end)

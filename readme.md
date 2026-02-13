@@ -5,7 +5,8 @@ FlyCam automatically adjusts the camera distance when you mount or dismount flyi
 ## Features
 
 - Smooth camera zoom animation when mounting/dismounting.
-- Separate zoom step settings for flying and ground states.
+- Separate zoom step settings for flying and ground states and races.
+- Optional: Switch to first person when a race start. Zooms back out when the race is finished.
 - Detection of flying mounts via `C_MountJournal` mountTypeID.
 - Debug command `/flycamdebug` to inspect active mount and type.
 
@@ -28,7 +29,8 @@ FlyCam passt die Kameradistanz automatisch an, wenn du in World of Warcraft (Ret
 ## Funktionen
 
 - Sanfte Kamerazoom-Animation beim Auf- und Absteigen.
-- Unterschiedliche Zoom-Schritte für Flug- und Boden-Zustand.
+- Unterschiedliche Zoom-Schritte für Flug- und Boden-Zustand, sowie in Rennen.
+- Optional: First Person-Sicht beim Start eines Rennens. Kamera zoomt wieder auf den Charakter nach Rennen-Ende.
 - Erkennung von Flugreittieren über `C_MountJournal` und `mountTypeID`.
 - Debug-Befehl `/flycamdebug`, um das aktive Reittier und den Typ zu prüfen.
 

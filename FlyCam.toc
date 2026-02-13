@@ -1,8 +1,8 @@
 ## Interface: 120000
 ## Title: FlyCam
 ## Notes: Auto-adjust camera when mounting/dismounting flying mounts
-## Author: YourName
-## Version: 0.3
+## Author: Usires
+## Version: 0.2
 ## SavedVariables: FlyCamDB
 
 FlyCam.lua
