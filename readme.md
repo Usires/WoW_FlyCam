@@ -1,57 +1,44 @@
-# :uk: FlyCam – World of Warcraft Addon
+# FlyCam – World of Warcraft Addon
 
-FlyCam automatically adjusts the camera distance when you mount or dismount flying mounts in World of Warcraft (Retail).
+Automatically adjusts the camera distance when you mount or dismount flying mounts in World of Warcraft (Retail).
 
 ## Features
 
 - Smooth camera zoom animation when mounting/dismounting.
-- Separate zoom step settings for flying and ground states and races.
-- Optional: Switch to first person when a race start. Zooms back out when the race is finished.
+- Separate zoom step settings for flying and ground states.
+- Dragonriding race detection with optional first-person view.
 - Detection of flying mounts via `C_MountJournal` mountTypeID.
 - Debug command `/flycamdebug` to inspect active mount and type.
+- Modular architecture for easy extension.
+
+## Files
+
+| File | Description |
+|------|-------------|
+| `FlyCam.lua` | Main entry point, events, defaults |
+| `FlyCam_Mounts.lua` | Mount detection, flying type IDs, debug commands |
+| `FlyCam_Camera.lua` | Smooth zoom, race first-person handling |
+| `FlyCam_Config.lua` | Options panel (Blizzard Settings API) |
+
+## Configuration
+
+- **Flying zoom steps**: How many notches to zoom out when mounting a flying mount.
+- **Ground zoom steps**: How many notches to zoom in when dismounting.
+- **Race zoom steps**: Camera distance after a dragonriding race.
+- **Transition duration**: How long the smooth zoom animation takes.
+- **First-person in races**: Optional first-person view during dragonriding races.
 
 ## Usage
 
 - Configure under `Esc → Options → AddOns → FlyCam`.
-- Use `/flycam fly <steps>`, `/flycam ground <steps>`, `/flycam duration <seconds>` for quick tweaks.
-- Use `/flycamdebug` while mounted to see `mountTypeID` and add it to the `FLYING_TYPES` table if needed.
+- Use `/flycamdebug` while mounted to see mountTypeID and add new flying mounts.
+- Edit `FlyCam_Mounts.lua` to add new mountTypeIDs to the `FLYING_TYPES` table.
 
 ## Installation
 
 Copy the `FlyCam` folder into your `World of Warcraft/_retail_/Interface/AddOns/` directory and enable the addon in the character selection AddOns menu.
 
----
+## Credits
 
-# :de: FlyCam – World of Warcraft Addon
-
-FlyCam passt die Kameradistanz automatisch an, wenn du in World of Warcraft (Retail) auf einen Flugreittier auf- oder absteigst.
-
-## Funktionen
-
-- Sanfte Kamerazoom-Animation beim Auf- und Absteigen.
-- Unterschiedliche Zoom-Schritte für Flug- und Boden-Zustand, sowie in Rennen.
-- Optional: First Person-Sicht beim Start eines Rennens. Kamera zoomt wieder auf den Charakter nach Rennen-Ende.
-- Erkennung von Flugreittieren über `C_MountJournal` und `mountTypeID`.
-- Debug-Befehl `/flycamdebug`, um das aktive Reittier und den Typ zu prüfen.
-
-## Verwendung
-
-- Konfiguration unter `Esc → Optionen → AddOns → FlyCam`.
-- Schnelle Anpassungen per Chat:
-  - `/flycam fly <Schritte>` – Zoom-Schritte beim Flugreittier.
-  - `/flycam ground <Schritte>` – Zoom-Schritte beim Absteigen / Boden.
-  - `/flycam duration <Sekunden>` – Dauer der Übergangsanimation.
-- Verwende `/flycamdebug`, während du auf einem Reittier sitzt, um:
-  - den Namen des aktiven Reittiers,
-  - seine `mountTypeID`
-  - und den aktuellen FlyCam-Status (fliegend oder nicht) zu sehen.
-- Wenn ein Flugreittier nicht als fliegend erkannt wird, kannst du die ausgegebene `mountTypeID` in der Tabelle `FLYING_TYPES` in `FlyCam.lua` ergänzen.
-
-## Installation
-
-1. Kopiere den Ordner `FlyCam` in dein Verzeichnis  
-   `World of Warcraft/_retail_/Interface/AddOns/`
-2. Stelle sicher, dass sich darin mindestens folgende Dateien befinden:
-   - `FlyCam/FlyCam.toc`
-   - `FlyCam/FlyCam.lua`
-3. Starte WoW neu (oder lade die UI mit `/reload`) und aktiviere das Addon im AddOn-Menü auf dem Charakterauswahlbildschirm.
+Original: Usires
+Refactored: Nix 🐧

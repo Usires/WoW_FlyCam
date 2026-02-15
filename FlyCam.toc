@@ -2,7 +2,10 @@
 ## Title: FlyCam
 ## Notes: Auto-adjust camera when mounting/dismounting flying mounts
 ## Author: Usires
-## Version: 0.2
+## Version: 0.3
 ## SavedVariables: FlyCamDB
 
 FlyCam.lua
+FlyCam_Mounts.lua
+FlyCam_Camera.lua
+FlyCam_Config.lua
