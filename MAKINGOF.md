@@ -2,6 +2,42 @@
 
 ## Version History
 
+### v1.0 — Feature Complete (2026-03-03)
+
+Simplified mount detection logic and squashed bugs.
+
+**What changed:**
+- Removed excluded mounts feature entirely — now uses `IsMountFlyingByType()` to detect flying mounts
+- Vendor/ground mounts automatically ignored (no unwanted zoom)
+- Added mount type 424 (WoW 10.2+ dragonriding)
+- Added `wasZoomedOut` state tracking for proper dismount zoom-back
+- Fixed event frame not receiving events (added `f:Show()`)
+- Cleaned up options panel UI
+
+**Final feature set:**
+- Automatic zoom out on flying mount
+- Automatic zoom in on dismount (only if actually zoomed out)
+- No zoom for vendor/ground mounts
+- Dragonriding race first-person option
+- Configurable zoom steps and duration
+
+### v0.3.1 — Single-File Merge (2026-02-17)
+
+Merged all modules back into a single `FlyCam.lua` file.
+
+**Why?**
+- WoW addon load order issues with separate Lua files
+- Simpler distribution (one file instead of four)
+- Easier debugging (everything in one place)
+
+**Changes:**
+- Combined `FlyCam.lua`, `FlyCam_Mounts.lua`, `FlyCam_Camera.lua`, `FlyCam_Config.lua` into one
+- Added Clean Code improvements:
+  - Extracted magic numbers to constants (`ZOOM_FACTOR_FLYING`)
+  - Added JSDoc-style comments for all functions
+  - Clear section headers and documentation
+  - Single responsibility within sections
+
 ### v0.3 — Modular Refactor (2026-02-15)
 
 Split the monolithic `FlyCam.lua` into logical modules:
@@ -37,14 +73,27 @@ Split the monolithic `FlyCam.lua` into logical modules:
 Uses `C_MountJournal.GetMountIDs()` and `C_MountJournal.GetMountInfoExtraByID()` to get `mountTypeID`. Flying types are stored in a lookup table.
 
 ### Race Detection
-Uses `AuraUtil.ForEachAura` with safety checks for secret/Blocked fields (WoW 10.2+ API changes).
+Uses `AuraUtil.ForEachAura` with safety checks for secret/blocked fields (WoW 10.2+ API changes).
 
 ### Smooth Zoom
 Implements a recursive `C_Timer.After` chain to step through zoom levels with configurable interval.
 
-## Future Ideas
+### Clean Code Principles Applied
 
-- [ ] Add support for custom zoom profiles
-- [ ] Per-mount-type zoom settings
-- [ ] Integration with WeakAuras
-- [ ] Telemetry-free analytics (optional)
+| Principle | Implementation |
+|-----------|----------------|
+| Single Responsibility | Each section (Mounts, Camera, Config) does one thing |
+| DRY | Slider factory, CopyDefaults function |
+| Meaningful Names | `IsOnFlyingMount()`, `ApplyForState()` |
+| Constants | `ZOOM_FACTOR_FLYING = 2.6` |
+| Comments | JSDoc-style for all functions |
+
+
+## FlyCam Future Features
+
+### Completed
+- [x] Excluded Mounts - add mount IDs that won't trigger zoom
+
+### Planned
+- [ ] i18n Support - English, German, French, Spanish
+- [ ] Enable/Disable Toggle - make automatic camera switching optional
