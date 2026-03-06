@@ -373,20 +373,21 @@ function FlyCam.Config.CreateOptionsPanel()
     end)
 
     -- Sliders (aligned left after race FP checkbox)
+    local db = FlyCamDB or FlyCam.defaults
     local flySlider = FlyCam.Config.CreateSlider(panel, "FlyCamFlyStepsSlider", 5, 40, "Flying zoom steps", raceFPCheckbox, -30)
-    flySlider:SetValue(FlyCam.defaults.flySteps)
+    flySlider:SetValue(db.flySteps or FlyCam.defaults.flySteps)
 
     local groundSlider = FlyCam.Config.CreateSlider(panel, "FlyCamGroundStepsSlider", 5, 40, "Ground zoom steps", flySlider, -40)
-    groundSlider:SetValue(FlyCam.defaults.groundSteps)
+    groundSlider:SetValue(db.groundSteps or FlyCam.defaults.groundSteps)
 
     local durationSlider = FlyCam.Config.CreateSlider(panel, "FlyCamDurationSlider", 0.1, 2.0, "Transition zoom duration", groundSlider, -40, true)
-    durationSlider:SetValue(FlyCam.defaults.duration)
+    durationSlider:SetValue(db.duration or FlyCam.defaults.duration)
 
     local raceSlider = FlyCam.Config.CreateSlider(panel, "FlyCamRaceStepsSlider", 5, 40, "Race zoom steps", durationSlider, -40)
-    raceSlider:SetValue(FlyCam.defaults.raceSteps)
+    raceSlider:SetValue(db.raceSteps or FlyCam.defaults.raceSteps)
 
     local raceDurationSlider = FlyCam.Config.CreateSlider(panel, "FlyCamRaceDurationSlider", 0.1, 2.0, "Race transition duration", raceSlider, -40, true)
-    raceDurationSlider:SetValue(FlyCam.defaults.raceDuration)
+    raceDurationSlider:SetValue(db.raceDuration or FlyCam.defaults.raceDuration)
 
     -- Footer with credits
     local footer = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -404,6 +405,18 @@ function FlyCam.Config.CreateOptionsPanel()
         durationSlider:SetValue(db.duration or FlyCam.defaults.duration)
         raceSlider:SetValue(db.raceSteps or FlyCam.defaults.raceSteps)
         raceDurationSlider:SetValue(db.raceDuration or FlyCam.defaults.raceDuration)
+    end
+
+    -- Save settings when "Okay" is clicked
+    panel.okay = function()
+        -- Values are already saved in FlyCamDB via OnValueChanged, 
+        -- but we ensure they're synced
+        local db = FlyCamDB or FlyCam.defaults
+        db.flySteps = flySlider:GetValue()
+        db.groundSteps = groundSlider:GetValue()
+        db.duration = durationSlider:GetValue()
+        db.raceSteps = raceSlider:GetValue()
+        db.raceDuration = raceDurationSlider:GetValue()
     end
 
     -- Register with WoW settings system
