@@ -1,5 +1,9 @@
 ## Changelog
 
+### 1.0.1 - 07.03.2026
+- **Bugfix**: Sliders now read from SavedVariables (FlyCamDB) instead of always using defaults
+- **Bugfix**: Added panel.okay callback to ensure settings are saved when closing options
+
 ### 1.0 - 03.03.2026
 - **Release**: Feature complete!
 - **Cleanup**: Removed dead code (IsOnFlyingMount function, excluded mounts references)
