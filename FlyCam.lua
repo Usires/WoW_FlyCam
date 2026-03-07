@@ -393,7 +393,7 @@ function FlyCam.Config.CreateOptionsPanel()
     local footer = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 20, 20)
     footer:SetJustifyH("LEFT")
-    footer:SetText("FlyCam v0.3.2 | by Usires & Nix | \"It's dangerous to go alone!\" - Hyrule Baldwin")
+    footer:SetText("FlyCam v1.0.1 | by Usires & Nix | \"It's dangerous to go alone!\" - Hyrule Baldwin")
 
     -- Refresh settings when panel is shown
     panel.refresh = function()
