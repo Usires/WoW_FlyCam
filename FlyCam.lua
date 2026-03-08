@@ -67,13 +67,18 @@ end
 FlyCam.Mounts = {}
 
 -- Mount type IDs that are considered flying
--- 248, 247, 306, 402 = various flying mount types
+-- Based on research from warcraft.wiki.gg and WowInterface forums
 FlyCam.Mounts.FLYING_TYPES = {
-    [248] = true,  -- Standard flying
-    [247] = true,  -- Dragonriding
-    [306] = true,  -- Flying
-    [402] = true,  -- Dragonriding (newer)
-    [424] = true,  -- Dragonriding (WoW 10.2+)
+    [242] = true,   -- Flying (added Aug 2024)
+    [247] = true,   -- Dragonriding
+    [248] = true,   -- Standard flying
+    [306] = true,   -- Flying (special cases)
+    [398] = true,   -- Flying (added Aug 2024)
+    [402] = true,   -- Dragonriding (newer)
+    [407] = true,   -- Flying (added Aug 2024)
+    [424] = true,   -- Dragonriding (WoW 10.2+)
+    [436] = true,   -- Flying (added Aug 2024)
+    [444] = true,   -- Owl from Shop
 }
 
 -- Aura spell IDs that indicate an active dragonriding race

@@ -1,4 +1,4 @@
-# FlyCam – World of Warcraft Addon (v1.0)
+# FlyCam – World of Warcraft Addon (v1.1)
 
 Automatically adjusts the camera distance when you mount or dismount flying mounts in World of Warcraft (Retail).
 
@@ -31,6 +31,14 @@ Automatically adjusts the camera distance when you mount or dismount flying moun
 - Configure under `Esc → Options → AddOns → FlyCam`.
 - Use `/flycamdebug` while mounted to see mountTypeID and add new flying mounts.
 - Edit `FlyCam.lua` to add new mountTypeIDs to the `FlyCam.Mounts.FLYING_TYPES` table.
+
+## Supported Flying Mount Types
+
+The addon detects flying mounts using these mountTypeIDs:
+- **242, 398, 407, 436** — Standard/Battle.net shop flying mounts
+- **247, 402, 424** — Dragonriding/Skyriding mounts
+- **248** — Classic flying mounts
+- **306, 444** — Special cases (Owl from Shop, etc.)
 
 ## Architecture
 

@@ -1,5 +1,9 @@
 ## Changelog
 
+### 1.1 - 08.03.2026
+- **Feature**: Added 4 new flying mount type IDs (242, 398, 407, 436) for better Battle.net shop mount detection
+- **Research**: Mapped out all known mountTypeIDs from warcraft.wiki.gg and WowInterface community
+
 ### 1.0.1 - 07.03.2026
 - **Bugfix**: Sliders now read from SavedVariables (FlyCamDB) instead of always using defaults
 - **Bugfix**: Added panel.okay callback to ensure settings are saved when closing options
